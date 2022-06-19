@@ -2,12 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-A CLI (Command Line Interface) tool that scans images in 2 or more directories,
-move all non-duplicate images to a folder (a new folder which will be created,
-al already existing folder, or one of the folders)
+A CLI (Command Line Interface) tool that scans images in 2 or more input directories,
+move all unique images to the output directory and remove duplicate images
 
 Usage:
-python diff.py source_directory_1 source_directory_2 [-d source_directory_3] ...
+remove_duplicate_images.py [-h] [-o OUTPUT] [-j JOBS] [-v {0,1,2,3,4,5}] main_directory directories [directories ...]
 
 Requirements:
 - Python 3.9+ (https://www.python.org/)
@@ -34,7 +33,7 @@ MAX_WORKERS: int = 8
 
 def process_directory_images(directory: pathlib.Path, max_workers: int = MAX_WORKERS) -> Dict[int, List[pathlib.Path]]:
     """
-    Scan folder images and calculate the signature of all the images in the directory,
+    Scan directory images and calculate the signature of all the images in the directory,
     And maps image signatures are mapped to image files' paths.
 
     The signatures and image files are mapped in a dictionary,
@@ -101,8 +100,6 @@ def main(argc: int = 0, argv: List[str] | None = None) -> int:
     arg_parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="A CLI (Command Line Interface) tool that scans 2 or more"
                     " directories and remove duplicate image files from them.",
-        epilog=f"Example:\n"
-               f"%(prog)s path/to/dir/a dir/b dir_c ... more_directories\n"
     )
 
     # main directory
@@ -126,7 +123,7 @@ def main(argc: int = 0, argv: List[str] | None = None) -> int:
     arg_parser.add_argument(
         '-o', "--output",
         help="An optional output directory that will contain all unique images from other directories. "
-             "Can be one of the directories that contains images. "
+             "Can be one of the directories that contains images. If the directory is not found, it ill be created. "
              "If not supplied, the main directory will be used as an output directory.",
         type=pathlib.Path,
         default=None
@@ -146,24 +143,15 @@ def main(argc: int = 0, argv: List[str] | None = None) -> int:
     arg_parser.add_argument(
         '-v', "--verbosity",
         help="Show more debugging info, values: [0-5]. "
-             "0: turn logging off. values [1 to 5]: display more logging information",
+             "0: turn logging off. values [1 to 5]: display more logging information. Default: 1",
         type=int,
         choices=[0, 1, 2, 3, 4, 5],
-        default=0
+        default=1
     )
 
     # --------------------------------------------------------------------------
     # Parse & Validate Command Line Arguments
     # --------------------------------------------------------------------------
-
-    # check if we have enough arguments (at least program_name + 2 directories)
-    if argc < 3:
-        LOGGER.critical(
-            "Not enough arguments. "
-            "There must be at least 2 directories.\n"
-        )
-        arg_parser.print_help(sys.stderr)
-        return -1
 
     # parse command line arguments
     parsed_args: argparse.Namespace = arg_parser.parse_args(argv[1:])
